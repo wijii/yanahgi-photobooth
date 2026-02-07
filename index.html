@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="theme-color" content="#efebe9">
+    <title>Yanahgi PhotoBooth</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  </head>
+  <body>
+    <div id="screen-overlay" class="hidden">
+      <div id="timer-container">
+        <span id="countdown-text"></span>
+      </div>
+      <div id="flash-layer"></div>
+    </div>
+
+    <div class="app-shell">
+      <aside class="sidebar">
+        <h3>Live Strip</h3>
+        <div id="blueprint" class="blueprint-paper"></div>
+      </aside>
+      <main class="stage">
+        <div id="setup-screen">
+          <div class="brand-area">
+            <h1>Yanahgi</h1>
+            <p>Digital PhotoBooth</p>
+          </div>
+
+          <div class="setup-actions">
+            <button id="create-btn" class="primary-btn">Create Room</button>
+
+            <div class="divider">
+              <span>OR</span>
+            </div>
+
+            <div class="join-container">
+              <input type="text" id="join-id" placeholder="Partner's Code" />
+              <button id="join-btn">Join</button>
+            </div>
+          </div>
+
+          <div id="my-code-box" class="hidden">
+            <div class="code-display">
+              <label>Your Room Code</label>
+              <strong id="display-id">...</strong>
+              <p>Share this with your partner to begin</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="booth-screen" class="hidden">
+          <div class="control-panel">
+            <div class="option">
+              <label>Layout</label>
+              <select id="layout-select">
+                <option value="strip">3-Photo Strip</option>
+                <option value="grid">2x2 Grid</option>
+                <option value="polaroid">Double Square</option>
+              </select>
+            </div>
+            <div class="option">
+              <label>Filter</label>
+              <select id="filter-select">
+                <option value="none">Normal</option>
+                <option value="grayscale(100%)">B&W</option>
+                <option value="sepia(60%)">Retro</option>
+              </select>
+            </div>
+            <div class="option">
+              <label>Paper</label>
+              <select id="color-select">
+                <option value="#ffffff">Classic White</option>
+                <option value="#f5f5f0">Warm Rice</option>
+                <option value="#dcdde1">Fog Grey</option>
+                <option value="#e2d1c3">Dusty Rose</option>
+                <option value="#2d3436">Midnight</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="dual-camera-view">
+            <div class="cam-box">
+              <video id="local-video" autoplay muted playsinline></video>
+              <span class="cam-tag">YOU</span>
+            </div>
+            <div class="cam-box">
+              <video id="remote-video" autoplay playsinline></video>
+              <span class="cam-tag">PARTNER</span>
+            </div>
+          </div>
+
+          <div class="shutter-row">
+            <button id="snap-btn" class="snap-btn">
+              <i class="ph-fill ph-aperture"></i>
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <canvas id="master-canvas" style="display: none"></canvas>
+
+    <div id="result-modal" class="modal hidden">
+      <div class="modal-content">
+        <img id="final-img" />
+        <div class="modal-btns">
+          <button id="download-btn" class="primary-btn">Download</button>
+          <button id="close-btn" class="secondary-btn">New Session</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
