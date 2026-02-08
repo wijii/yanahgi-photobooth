@@ -201,7 +201,7 @@ function finishSession() {
     
     ctx.font = "300 16px Inter"; 
     ctx.textAlign = "center";
-    ctx.fillText("YANAHGI // " + new Date().toLocaleDateString(), canvas.width/2, canvas.height - 40);
+    ctx.fillText("YANAHGI " + new Date().toLocaleDateString(), canvas.width/2, canvas.height - 40);
 
     const finalImg = document.getElementById('final-img');
     finalImg.src = canvas.toDataURL('image/png');
@@ -262,4 +262,5 @@ document.getElementById('download-btn').onclick = () => {
 document.getElementById('close-btn').onclick = () => { 
     document.getElementById('result-modal').classList.add('hidden'); 
     resetBoothState(); 
+
 };
