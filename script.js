@@ -2,23 +2,15 @@ let peer, localStream, remoteStream, conn;
 const canvas = document.getElementById('master-canvas');
 const ctx = canvas.getContext('2d');
 
-// --- STATE MANAGEMENT ---
 let currentStep = 0;
 let totalSteps = 3; 
-let isBusy = false; // THE MASTER LOCK
+let isBusy = false; 
 
-// --- PEER JS SETUP ---
+// --- PEER JS ---
 const myId = Math.random().toString(36).substring(2, 8).toUpperCase();
 peer = new Peer(myId);
-
-peer.on('open', id => {
-    document.getElementById('display-id').textContent = id;
-});
-
-peer.on('connection', (connection) => {
-    conn = connection;
-    setupDataListeners();
-});
+peer.on('open', id => document.getElementById('display-id').textContent = id);
+peer.on('connection', c => { conn = c; setupDataListeners(); });
 
 peer.on('call', async (call) => {
     const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
@@ -31,7 +23,7 @@ peer.on('call', async (call) => {
     });
 });
 
-// --- UI INTERACTIONS ---
+// --- INTERACTIONS ---
 document.getElementById('create-btn').onclick = async () => {
     document.getElementById('my-code-box').classList.remove('hidden');
     const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
@@ -40,30 +32,24 @@ document.getElementById('create-btn').onclick = async () => {
 
 document.getElementById('join-btn').onclick = async () => {
     const code = document.getElementById('join-id').value.toUpperCase();
-    if(!code) return alert("Enter a code first!");
-    
+    if(!code) return alert("Enter a code!");
     try {
         const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
         setupLocalStream(stream);
         conn = peer.connect(code);
         setupDataListeners();
-        
         const call = peer.call(code, stream);
         call.on('stream', s => { 
             remoteStream = s; 
             document.getElementById('remote-video').srcObject = s; 
             startBooth(); 
         });
-    } catch (err) {
-        alert("Camera Error: " + err.message);
-    }
+    } catch (err) { alert(err.message); }
 };
 
 function setupDataListeners() {
     conn.on('data', (data) => {
-        if (data.type === 'SNAP_NEXT' && !isBusy) {
-            takeNextPhoto();
-        }
+        if (data.type === 'SNAP_NEXT' && !isBusy) takeNextPhoto();
     });
 }
 
@@ -95,16 +81,15 @@ document.getElementById('snap-btn').onclick = () => {
 
 async function takeNextPhoto() {
     if (isBusy || currentStep >= totalSteps) return;
-
     isBusy = true;
+    
     const btn = document.getElementById('snap-btn');
     const layout = document.getElementById('layout-select').value;
     
-    // Add "Busy" class for animation
+    // VISUAL LOCK: No text, just the "busy" class
     btn.classList.add('busy');
 
     let yPos = 0, xPos = 50, size = 292;
-    
     if (layout === 'strip') {
         size = 292; xPos = 50;
         if(currentStep === 0) yPos = 50;
@@ -125,7 +110,6 @@ async function takeNextPhoto() {
         if(layout === 'strip') { canvas.width = 700; canvas.height = 1100; }
         else if(layout === 'grid') { canvas.width = 700; canvas.height = 800; }
         else { canvas.width = 800; canvas.height = 650; }
-
         const paperColor = document.getElementById('color-select').value;
         ctx.fillStyle = paperColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -139,7 +123,6 @@ async function takeNextPhoto() {
         btn.classList.remove('busy');
         btn.classList.add('done');
     } else {
-        // Unlock for next pose
         isBusy = false;
         btn.classList.remove('busy');
     }
@@ -161,15 +144,12 @@ async function captureRow(rowIdx, x, y, size) {
 
     timerBox.classList.add('hidden');
     flash.classList.add('flash-trigger');
-    
-    const filter = document.getElementById('filter-select').value;
-    ctx.filter = filter;
+    ctx.filter = document.getElementById('filter-select').value;
     
     drawSquareCrop(document.getElementById('local-video'), x, y, size, true);
     drawSquareCrop(document.getElementById('remote-video'), x + size + 15, y, size, false);
 
     updateMiniPreview(rowIdx, x, y, size);
-
     await new Promise(r => setTimeout(r, 400));
     flash.classList.remove('flash-trigger');
     overlay.classList.add('hidden');
@@ -199,20 +179,15 @@ function finishSession() {
     ctx.font = "300 16px Inter"; 
     ctx.textAlign = "center";
     ctx.fillText("YANAHGI // " + new Date().toLocaleDateString(), canvas.width/2, canvas.height - 40);
-
-    const finalImg = document.getElementById('final-img');
-    finalImg.src = canvas.toDataURL('image/png');
-    
-    setTimeout(() => {
-        document.getElementById('result-modal').classList.remove('hidden'); 
-    }, 500);
+    document.getElementById('final-img').src = canvas.toDataURL('image/png');
+    setTimeout(() => document.getElementById('result-modal').classList.remove('hidden'), 500);
 }
 
 function resetBoothState() {
     currentStep = 0;
     isBusy = false;
     const btn = document.getElementById('snap-btn');
-    btn.classList.remove('busy', 'done');
+    btn.classList.remove('busy', 'done'); // DO NOT use innerText here
     document.getElementById('blueprint').innerHTML = '';
     updateBlueprint();
 }
@@ -221,14 +196,9 @@ function updateBlueprint() {
     const layout = document.getElementById('layout-select').value;
     const container = document.getElementById('blueprint');
     const rows = layout === 'strip' ? 3 : (layout === 'grid' ? 2 : 1);
-    
     container.innerHTML = '';
     for(let i=0; i<rows; i++) {
-        container.innerHTML += `
-            <div class="slot-pair">
-                <div class="mini-square" id="slot-${i}-L"></div>
-                <div class="mini-square" id="slot-${i}-R"></div>
-            </div>`;
+        container.innerHTML += `<div class="slot-pair"><div class="mini-square" id="slot-${i}-L"></div><div class="mini-square" id="slot-${i}-R"></div></div>`;
     }
     container.style.background = document.getElementById('color-select').value;
 }
@@ -250,9 +220,7 @@ document.getElementById('download-btn').onclick = () => {
     const link = document.createElement('a');
     link.href = document.getElementById('final-img').src;
     link.download = `Yanahgi-${Date.now()}.png`;
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
 };
 
 document.getElementById('close-btn').onclick = () => { 
