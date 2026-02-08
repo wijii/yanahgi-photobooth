@@ -7,26 +7,39 @@ let totalSteps = 3;
 let isBusy = false; 
 let isLocalMirrored = true;
 
-// PeerJS Setup
+// 1. Initialize Peer with Error Handling
 const myId = Math.random().toString(36).substring(2, 8).toUpperCase();
 peer = new Peer(myId);
-peer.on('open', id => document.getElementById('display-id').textContent = id);
+
+peer.on('open', id => {
+    console.log("My Peer ID is: " + id);
+    document.getElementById('display-id').textContent = id;
+});
+
+// Catch errors (like 'peer-unavailable' if the code is wrong)
+peer.on('error', err => {
+    console.error("PeerJS Error:", err.type);
+    alert("Connection Error: " + err.type);
+});
+
 peer.on('connection', c => { 
     conn = c; 
-    setupDataListeners();
+    setupDataListeners(conn); // Pass conn directly to be safe
     updateConnectionStatus(true);
 });
 
 peer.on('call', async (call) => {
-    const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
-    setupLocalStream(stream);
-    call.answer(stream);
-    call.on('stream', s => { 
-        remoteStream = s; 
-        document.getElementById('remote-video').srcObject = s; 
-        startBooth(); 
-        updateConnectionStatus(true);
-    });
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+        setupLocalStream(stream);
+        call.answer(stream);
+        call.on('stream', s => { 
+            remoteStream = s; 
+            document.getElementById('remote-video').srcObject = s; 
+            startBooth(); 
+            updateConnectionStatus(true);
+        });
+    } catch (err) { console.error("Media Error:", err); }
 });
 
 // Setup & Join
@@ -38,19 +51,36 @@ document.getElementById('create-btn').onclick = async () => {
 
 document.getElementById('join-btn').onclick = async () => {
     const code = document.getElementById('join-id').value.toUpperCase();
-    if(!code) return;
+    if(!code) return alert("Please enter a code");
+    
+    // Ensure Peer is ready
+    if (!peer.id) return alert("Peer not initialized yet. Wait a second.");
+
     try {
         const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
         setupLocalStream(stream);
+
+        // Connect Data
         conn = peer.connect(code);
-        setupDataListeners();
+        if (conn) {
+            setupDataListeners(conn);
+        } else {
+            throw new Error("Failed to create connection object");
+        }
+
+        // Connect Video
         const call = peer.call(code, stream);
-        call.on('stream', s => { 
-            remoteStream = s; 
-            document.getElementById('remote-video').srcObject = s; 
-            startBooth();
-        });
-    } catch (err) { alert(err.message); }
+        if (call) {
+            call.on('stream', s => { 
+                remoteStream = s; 
+                document.getElementById('remote-video').srcObject = s; 
+                startBooth();
+            });
+        }
+    } catch (err) { 
+        console.error("Join Error:", err);
+        alert("Join failed: " + err.message); 
+    }
 };
 
 document.getElementById('mirror-toggle').onclick = () => {
@@ -58,9 +88,14 @@ document.getElementById('mirror-toggle').onclick = () => {
     document.getElementById('local-video').classList.toggle('unmirrored', !isLocalMirrored);
 };
 
-function setupDataListeners() {
-    conn.on('data', data => { if (data.type === 'SNAP_NEXT' && !isBusy) takeNextPhoto(); });
-    conn.on('close', () => updateConnectionStatus(false));
+// 2. Updated to accept 'c' as an argument to prevent "undefined" errors
+function setupDataListeners(c) {
+    if (!c) return;
+    c.on('data', data => { 
+        if (data.type === 'SNAP_NEXT' && !isBusy) takeNextPhoto(); 
+    });
+    c.on('close', () => updateConnectionStatus(false));
+    c.on('error', (err) => console.error("Conn Error:", err));
 }
 
 function updateConnectionStatus(isLive) {
@@ -148,7 +183,6 @@ async function captureRow(rowIdx, x, y, size) {
     }
 
     countText.innerText = "";
-    // Shutter audio removed from here
     flash.classList.add('flash-trigger');
     
     const filterVal = document.getElementById('filter-select').value;
@@ -239,8 +273,10 @@ function updateMiniPreview(row, x, y, size, borderColor) {
         tCtx.drawImage(canvas, offX, y, size, size, 0, 0, size, size);
         return temp.toDataURL();
     };
-    document.getElementById(`slot-${row}-L`).innerHTML = `<img src="${extract(x)}">`;
-    document.getElementById(`slot-${row}-R`).innerHTML = `<img src="${extract(x + size + 20)}">`;
+    const slotL = document.getElementById(`slot-${row}-L`);
+    const slotR = document.getElementById(`slot-${row}-R`);
+    if(slotL) slotL.innerHTML = `<img src="${extract(x)}">`;
+    if(slotR) slotR.innerHTML = `<img src="${extract(x + size + 20)}">`;
 }
 
 document.getElementById('download-btn').onclick = () => {
