@@ -7,24 +7,21 @@
   --border: #d7ccc8;
 }
 
-/* --- FILM GRAIN / NOISE PATTERN --- */
-/* This is a tiny base64 noise tile */
+/* --- FILM GRAIN OVERLAY --- */
+/* This creates that subtle static/vintage noise over the whole page */
 .grain-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 5;
-  opacity: 0.15; /* Subtle grain */
+  opacity: 0.15;
   background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
   mix-blend-mode: overlay;
 }
 
 body {
   margin: 0;
-  font-family:
-    "Inter",
-    -apple-system,
-    sans-serif;
+  font-family: "Inter", -apple-system, sans-serif;
   background: var(--bg);
   height: 100vh;
   overflow: hidden;
@@ -38,13 +35,14 @@ body {
 }
 
 /* --- SIDEBAR --- */
+/* The panel on the left with the film strip preview */
 .sidebar {
   width: 280px;
   flex-shrink: 0;
   background: var(--surface);
   border-right: 1px solid var(--border);
   padding: 30px;
-  display: none;
+  display: none; /* Hidden until we join */
   flex-direction: column;
   align-items: center;
   z-index: 10;
@@ -87,7 +85,7 @@ body {
   overflow: hidden;
   position: relative;
 }
-/* Add grain to sidebar previews too! */
+/* Adds a little texture to the mini squares */
 .mini-square::after {
   content: "";
   position: absolute;
@@ -105,6 +103,7 @@ body {
 }
 
 /* --- STAGE --- */
+/* The main area where the cameras are */
 .stage {
   flex: 1;
   display: flex;
@@ -141,21 +140,42 @@ body {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  align-items: center; 
+}
+
+/* --- JOIN INPUT AREA --- */
+.join-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 5px;
 }
 
 #join-id {
-  background: transparent;
-  border: none;
+  flex: 1;
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid var(--border);
   border-bottom: 2px solid var(--accent);
-  padding: 15px;
-  text-align: center;
-  font-size: 1.1rem;
-  outline: none;
+  padding: 12px 15px;
+  font-size: 1rem;
   color: var(--accent);
   font-weight: bold;
+  border-radius: 4px;
+  text-transform: uppercase;
+  outline: none;
+  text-align: left;
+  min-width: 0;
+}
+#join-id:focus {
+  background: #fff;
+  border-color: var(--accent);
 }
 #join-id::placeholder {
   color: var(--border);
+  font-weight: normal;
+  text-transform: none;
 }
 
 /* --- BUTTONS --- */
@@ -165,7 +185,7 @@ body {
   background: var(--accent);
   color: white;
   border: none;
-  padding: 18px;
+  padding: 15px 20px;
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 1px;
@@ -174,7 +194,13 @@ body {
   border-radius: 6px;
   transition: all 0.2s;
   box-shadow: 0 4px 10px rgba(128, 0, 0, 0.2);
+  white-space: nowrap;
 }
+
+#create-btn {
+  width: 100%;
+}
+
 .primary-btn:hover {
   background: var(--accent-hover);
   transform: translateY(-2px);
@@ -209,6 +235,7 @@ body {
   font-size: 0.6rem;
   letter-spacing: 2px;
   margin: 10px 0;
+  width: 100%;
 }
 .divider::before,
 .divider::after {
@@ -237,7 +264,7 @@ body {
   color: var(--accent);
 }
 
-/* --- CAMERA & PANEL --- */
+/* --- CAMERA & CONTROLS --- */
 .control-panel {
   display: flex;
   gap: 20px;
@@ -275,7 +302,7 @@ input[type="text"] {
   color: var(--text);
   outline: none;
 }
-input[type="text"] {
+.control-panel input[type="text"] {
   border-bottom: 2px solid var(--accent);
   border-top: none;
   border-left: none;
@@ -316,13 +343,13 @@ video {
   transition: transform 0.3s;
 }
 
-/* Mirror Logic */
+/* Logic for mirroring the local webcam */
 #local-video {
   transform: scaleX(-1);
-} /* Default Mirror */
+} 
 #local-video.unmirrored {
   transform: scaleX(1);
-} /* Toggle state */
+}
 
 .cam-tag {
   position: absolute;
@@ -342,7 +369,7 @@ video {
   gap: 6px;
 }
 
-/* Status Dot */
+/* Status Dot (Green/Red) */
 .status-dot {
   width: 8px;
   height: 8px;
@@ -358,7 +385,7 @@ video {
   animation: pulseRed 1s infinite;
 }
 
-/* Icon Button (Mirror) */
+/* Icon Button (Mirror toggle) */
 .icon-btn {
   position: absolute;
   top: 10px;
@@ -381,16 +408,16 @@ video {
   background: rgba(255, 255, 255, 0.4);
 }
 
-/* --- TOAST --- */
+/* --- TOAST NOTIFICATIONS --- */
 #toast-container {
   position: fixed;
   top: 20px;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 20001;
   pointer-events: none;
+  display: flex;
+  justify-content: center;
 }
 .toast {
   background: #c0392b;
@@ -404,6 +431,7 @@ video {
   gap: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
   animation: slideDown 0.3s ease;
+  white-space: nowrap;
 }
 
 /* --- SHUTTER BUTTON --- */
@@ -454,7 +482,7 @@ video {
   color: white;
 }
 
-/* --- OVERLAYS --- */
+/* --- COUNTDOWN & FLASH OVERLAY --- */
 #screen-overlay {
   position: fixed;
   inset: 0;
@@ -465,7 +493,7 @@ video {
   pointer-events: none;
 }
 #timer-container {
-  margin-right: 15%;
+  margin-right: 6%;
 }
 #countdown-text {
   color: var(--accent);
@@ -485,7 +513,7 @@ video {
   animation: flash-anim 0.4s ease-out;
 }
 
-/* --- MODAL --- */
+/* --- RESULTS MODAL --- */
 .modal {
   position: fixed;
   inset: 0;
@@ -528,50 +556,143 @@ video {
 .hidden {
   display: none !important;
 }
+
+/* --- ANIMATIONS --- */
 @keyframes flash-anim {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
+  0% { opacity: 1; }
+  100% { opacity: 0; }
 }
 @keyframes slideIn {
-  from {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 @keyframes pulseRed {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-  100% {
-    opacity: 1;
-  }
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
 }
 @keyframes slideDown {
-  from {
-    transform: translateY(-20px);
-    opacity: 0;
+  from { transform: translateY(-20px) translateX(-50%); opacity: 0; }
+  to { transform: translateY(0) translateX(-50%); opacity: 1; }
+}
+
+/* MOBILE RESPONSIVE ADJUSTMENTS */
+
+@media screen and (max-width: 768px) {
+  body {
+    height: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
-  to {
-    transform: translateY(0);
-    opacity: 1;
+  .app-shell {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+  /* Sidebar moves to the bottom or top as a strip */
+  .sidebar {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    padding: 15px;
+    flex-direction: row;
+    overflow-x: auto;
+    order: 2;
+    gap: 15px;
+    background: #fafafa;
+  }
+  .sidebar h3 {
+    display: none;
+  }
+  .blueprint-paper {
+    width: 80px;
+    flex-shrink: 0;
+    padding: 8px;
+  }
+  .stage {
+    order: 1;
+    padding-bottom: 20px;
+    width: 100%;
+  }
+  #setup-screen {
+    padding: 20px;
+    max-width: 100%;
+  }
+  .brand-area h1 {
+    font-size: 3rem;
+  }
+  /* Stack cameras vertically on phones */
+  .dual-camera-view {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 0 10px;
+  }
+  .cam-box {
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 4/3;
+  }
+  .control-panel {
+    padding: 15px;
+    margin: 10px;
+    gap: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: calc(100% - 20px);
+    box-sizing: border-box;
+  }
+  .option:last-child {
+    grid-column: 1 / -1;
+  }
+  select,
+  input[type="text"] {
+    font-size: 16px; /* Prevents zoom on iOS inputs */
+    height: 40px;
+  }
+  /* Stick the shutter button to the bottom so it's always reachable */
+  .shutter-row {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    position: sticky;
+    bottom: 20px;
+    z-index: 100;
+  }
+  .snap-btn {
+    width: 70px;
+    height: 70px;
+    box-shadow: 0 4px 25px rgba(128, 0, 0, 0.4);
+  }
+  .modal-content {
+    width: 90%;
+    padding: 15px;
+  }
+  .modal img {
+    max-height: 50vh;
+    width: auto;
+    max-width: 100%;
+  }
+  .option label {
+    font-size: 0.7rem;
+  }
+  #join-id {
+    font-size: 1.2rem;
+  }
+  #display-id {
+    font-size: 1.8rem;
+  }
+}
+
+@media screen and (max-height: 667px) {
+  .brand-area h1 {
+    font-size: 2.5rem;
+  }
+  .brand-area p {
+    margin-bottom: 25px;
   }
 }
