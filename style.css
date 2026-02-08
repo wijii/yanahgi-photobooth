@@ -1,19 +1,16 @@
 :root {
-  /* NEW PALETTE: Maroon, Chocolate Brown, and Cream */
-  --bg: #fffbf0; /* Vintage Cream */
+  /* REFINED PALETTE: Maroon, Chocolate, Cream */
+  --bg: #fff0f0;         /* Very pale reddish cream */
   --surface: #ffffff;
-  --text: #3e2723; /* Deep Chocolate Brown */
-  --accent: #800000; /* Deep Maroon Red */
-  --border: #d7ccc8; /* Muted Sandstone */
-  --valentine: #e91e63; /* Valentine Pink/Red */
+  --text: #4e342e;    
+  --accent: #800000;    
+  --accent-hover: #5a0000;
+  --border: #d7ccc8;
 }
 
 body {
   margin: 0;
-  font-family:
-    "Inter",
-    -apple-system,
-    sans-serif;
+  font-family: "Inter", -apple-system, sans-serif;
   background: var(--bg);
   height: 100vh;
   overflow: hidden;
@@ -37,7 +34,7 @@ body {
   flex-direction: column;
   align-items: center;
   z-index: 10;
-  transition: all 0.3s ease;
+  box-shadow: 5px 0 20px rgba(128, 0, 0, 0.05); /* Slight maroon tint shadow */
 }
 
 .sidebar.active {
@@ -46,11 +43,11 @@ body {
 }
 
 .sidebar h3 {
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 3px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 2px;
   text-transform: uppercase;
-  color: var(--accent); /* Changed to Maroon */
+  color: var(--accent);
   margin-bottom: 25px;
   border-bottom: 2px solid var(--accent);
   padding-bottom: 10px;
@@ -65,20 +62,22 @@ body {
   gap: 10px;
   width: 180px;
   background: white;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   border: 1px solid #eee;
+  transition: background 0.3s;
 }
 
 .slot-pair {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .mini-square {
   flex: 1;
   aspect-ratio: 1/1;
-  background: #f5f5f5;
-  border: 1px solid #eee; /* This is the "Line" for the preview */
+  background: #f0f0f0;
+  /* The border will be injected by JS now */
+  overflow: hidden; 
 }
 
 .mini-square img {
@@ -106,21 +105,22 @@ body {
 }
 
 .brand-area h1 {
-  font-family: "Georgia", serif; /* Valentine Vibe */
-  font-weight: 300;
-  font-size: 4rem;
+  font-family: "Georgia", serif;
+  font-weight: 400;
+  font-size: 4.5rem;
   letter-spacing: -2px;
   margin: 0;
   color: var(--accent);
 }
 
 .brand-area p {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   letter-spacing: 6px;
   text-transform: uppercase;
-  color: #8d6e63;
-  margin-top: 10px;
+  color: var(--text);
+  margin-top: 5px;
   margin-bottom: 50px;
+  opacity: 0.8;
 }
 
 .setup-actions {
@@ -132,12 +132,17 @@ body {
 #join-id {
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
   padding: 15px;
   text-align: center;
   font-size: 1.1rem;
   outline: none;
-  color: var(--text);
+  color: var(--accent);
+  font-weight: bold;
+}
+
+#join-id::placeholder {
+    color: var(--border);
 }
 
 /* --- BUTTONS --- */
@@ -149,43 +154,48 @@ body {
   border: none;
   padding: 18px;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(128, 0, 0, 0.2);
 }
 
 .primary-btn:hover {
-  background: #5a0000;
+  background: var(--accent-hover);
   transform: translateY(-2px);
 }
 
-/* FIXED: New Session Button Style */
-.secondary-btn {
+/* "UNSTYLED" / TEXT ONLY BUTTON for New Session */
+.text-link-btn {
   background: transparent;
+  border: none;
   color: var(--text);
-  border: 1px solid var(--text);
-  padding: 15px 30px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
+  font-family: "Inter", sans-serif;
+  font-size: 0.85rem;
   cursor: pointer;
-  border-radius: 4px;
-  margin-top: 20px;
-  transition: 0.3s;
+  margin-top: 15px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-.secondary-btn:hover {
-  background: var(--text);
-  color: white;
+.text-link-btn:hover {
+  opacity: 1;
 }
 
 .divider {
   display: flex;
   align-items: center;
-  color: #a1887f;
+  color: var(--text);
+  opacity: 0.5;
   font-size: 0.6rem;
   letter-spacing: 2px;
   margin: 10px 0;
@@ -206,15 +216,15 @@ body {
 #my-code-box {
   margin-top: 30px;
   padding: 20px;
-  border: 1px dashed var(--accent);
+  border: 2px dashed var(--accent);
   background: rgba(255, 255, 255, 0.5);
   border-radius: 8px;
 }
 
 #display-id {
   display: block;
-  font-size: 2rem;
-  font-weight: 400;
+  font-size: 2.2rem;
+  font-weight: 600;
   letter-spacing: 5px;
   margin: 10px 0;
   color: var(--accent);
@@ -223,22 +233,43 @@ body {
 /* --- CAMERA & PANEL --- */
 .control-panel {
   display: flex;
-  gap: 30px;
+  gap: 25px;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  padding: 15px 40px;
-  border-radius: 50px;
-  margin-bottom: 40px;
+  padding: 15px 30px;
+  border-radius: 12px;
+  margin-bottom: 30px;
   border: 1px solid var(--border);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+.option {
+    display: flex;
+    flex-direction: column;
 }
 
 .option label {
   font-size: 0.6rem;
   font-weight: 700;
-  color: var(--text);
-  display: block;
-  margin-bottom: 4px;
+  color: var(--accent); /* Maroon labels */
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+select {
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: white;
+    font-size: 0.8rem;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+}
+
+select:focus {
+    border-color: var(--accent);
 }
 
 .dual-camera-view {
@@ -253,10 +284,11 @@ body {
   flex: 1;
   max-width: 400px;
   aspect-ratio: 1/1;
-  background: #1a1a1a;
+  background: #2d3436;
   position: relative;
-  border-radius: 8px;
-  border: 3px solid var(--accent); /* Maroon frame for live view */
+  border-radius: 4px;
+  /* Keeping the frame clean for the UI, the photo frame is on canvas */
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   overflow: hidden;
 }
 
@@ -275,12 +307,14 @@ video {
   position: absolute;
   top: 15px;
   left: 15px;
-  background: var(--accent);
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
   color: #fff;
   padding: 4px 10px;
   font-size: 0.6rem;
   font-weight: 700;
-  border-radius: 20px;
+  letter-spacing: 1px;
+  border-radius: 4px;
 }
 
 /* --- SHUTTER BUTTON --- */
@@ -291,62 +325,56 @@ video {
 }
 
 .snap-btn {
-  width: 85px;
-  height: 85px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   background: white;
   border: 4px solid var(--accent);
-  padding: 8px;
+  padding: 0;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  position: relative;
-}
-
-.snap-btn::before {
-  content: "";
-  position: absolute;
-  inset: 4px;
-  background: var(--accent);
-  border-radius: 50%;
-  transition: inherit;
+  box-shadow: 0 4px 20px rgba(128, 0, 0, 0.2);
 }
 
 .snap-btn i {
-  position: relative;
-  z-index: 2;
-  color: white;
-  font-size: 1.8rem;
+  color: var(--accent);
+  font-size: 2rem;
+  transition: color 0.3s;
 }
 
 .snap-btn:hover {
-  transform: scale(1.1);
+  transform: scale(1.05);
+  background: var(--accent);
+}
+
+.snap-btn:hover i {
+    color: white;
 }
 
 /* States */
-.snap-btn.busy::before {
-  background: #8d6e63;
-  animation: pulse-busy 1.5s infinite;
+.snap-btn.busy {
+    border-color: #aaa;
+    pointer-events: none;
+}
+.snap-btn.busy i {
+    animation: spin 1s infinite linear;
+    color: #aaa;
 }
 
 .snap-btn.done {
+  border-color: #2ecc71;
   background: #2ecc71;
-  border-color: #27ae60;
+}
+.snap-btn.done i {
+    color: white;
 }
 
-@keyframes pulse-busy {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(0.85);
-  }
-  100% {
-    transform: scale(1);
-  }
+@keyframes spin {
+    from {transform: rotate(0deg);}
+    to {transform: rotate(360deg);}
 }
 
 /* --- OVERLAYS --- */
@@ -361,15 +389,15 @@ video {
 }
 
 #timer-container {
-  margin-right: 12%;
+  margin-right: 15%;
 }
 
 #countdown-text {
   color: var(--accent);
-  font-size: 10rem;
-  font-weight: 200;
+  font-size: 12rem;
+  font-weight: 700;
   font-family: "Georgia", serif;
-  text-shadow: 0 0 30px rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 30px rgba(255, 255, 255, 1);
 }
 
 #flash-layer {
@@ -388,27 +416,44 @@ video {
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(62, 39, 35, 0.95); /* Chocolate Brown background */
+  background: rgba(62, 39, 35, 0.9); /* Dark Chocolate overlay */
   z-index: 20000;
   display: flex;
   align-items: center;
   justify-content: center;
+  backdrop-filter: blur(5px);
 }
 
 .modal-content {
-  background: white;
-  padding: 30px;
+  background: var(--bg);
+  padding: 20px;
   border-radius: 8px;
   text-align: center;
   max-width: 90%;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
 }
 
 .modal img {
-  max-width: 100%;
-  max-height: 65vh;
-  margin-bottom: 20px;
+  max-height: 60vh;
+  width: auto;
   border: 1px solid #ddd;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.modal-btns {
+    width: 100%;
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#download-btn {
+    width: 100%;
+    max-width: 250px;
 }
 
 .hidden {
@@ -416,10 +461,11 @@ video {
 }
 
 @keyframes flash-anim {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-100%); opacity: 0;}
+    to { transform: translateX(0); opacity: 1;}
 }
