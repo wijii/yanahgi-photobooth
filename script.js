@@ -86,23 +86,22 @@ async function takeNextPhoto() {
     const btn = document.getElementById('snap-btn');
     const layout = document.getElementById('layout-select').value;
     
-    // VISUAL LOCK: No text, just the "busy" class
     btn.classList.add('busy');
 
     let yPos = 0, xPos = 50, size = 292;
     if (layout === 'strip') {
-        size = 292; xPos = 50;
+        size = 285; xPos = 55; // Adjusted for frame room
         if(currentStep === 0) yPos = 50;
         if(currentStep === 1) yPos = 365;
         if(currentStep === 2) yPos = 680;
         totalSteps = 3;
     } else if (layout === 'grid') {
-        size = 292; xPos = 50;
+        size = 285; xPos = 55;
         if(currentStep === 0) yPos = 50;
         if(currentStep === 1) yPos = 365;
         totalSteps = 2;
     } else {
-        size = 330; xPos = 65; yPos = 65;
+        size = 320; xPos = 70; yPos = 70;
         totalSteps = 1;
     }
 
@@ -146,8 +145,9 @@ async function captureRow(rowIdx, x, y, size) {
     flash.classList.add('flash-trigger');
     ctx.filter = document.getElementById('filter-select').value;
     
+    // --- DRAW WITH WHITE FRAMES ---
     drawSquareCrop(document.getElementById('local-video'), x, y, size, true);
-    drawSquareCrop(document.getElementById('remote-video'), x + size + 15, y, size, false);
+    drawSquareCrop(document.getElementById('remote-video'), x + size + 20, y, size, false);
 
     updateMiniPreview(rowIdx, x, y, size);
     await new Promise(r => setTimeout(r, 400));
@@ -161,7 +161,18 @@ function drawSquareCrop(video, x, y, size, mirror) {
     const m = Math.min(vW, vH);
     const sx = (vW - m) / 2;
     const sy = (vH - m) / 2;
+
     ctx.save();
+    
+    // 1. THE LINE/FRAME: Draw white rectangle behind the photo
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(x - 6, y - 6, size + 12, size + 12);
+
+    // 2. CLIP & DRAW
+    ctx.beginPath();
+    ctx.rect(x, y, size, size);
+    ctx.clip();
+
     if (mirror) {
         ctx.translate(x + size, y);
         ctx.scale(-1, 1);
@@ -169,16 +180,31 @@ function drawSquareCrop(video, x, y, size, mirror) {
     } else {
         ctx.drawImage(video, sx, sy, m, m, x, y, size, size);
     }
+    
+    // 3. INNER BORDER (Makes it look like high-quality print)
+    ctx.filter = 'none';
+    ctx.strokeStyle = "rgba(0,0,0,0.1)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, size, size);
+    
     ctx.restore();
 }
 
 function finishSession() {
     const paper = document.getElementById('color-select').value;
     ctx.filter = 'none';
-    ctx.fillStyle = (paper === "#2d3436") ? "white" : "#111";
-    ctx.font = "300 16px Inter"; 
+    
+    // VALENTINE BRANDING
+    // Use Maroon if the paper is light, Cream if the paper is dark
+    ctx.fillStyle = (paper === "#2d3436" || paper === "#3e2723") ? "#fffbf0" : "#800000";
+    
+    ctx.font = "italic 700 22px Georgia"; 
     ctx.textAlign = "center";
-    ctx.fillText("YANAHGI // " + new Date().toLocaleDateString(), canvas.width/2, canvas.height - 40);
+    ctx.fillText("With Love ❤️", canvas.width / 2, canvas.height - 50);
+    
+    ctx.font = "300 12px Inter";
+    ctx.fillText("YANAHGI ARCHIVE // " + new Date().toLocaleDateString(), canvas.width / 2, canvas.height - 30);
+
     document.getElementById('final-img').src = canvas.toDataURL('image/png');
     setTimeout(() => document.getElementById('result-modal').classList.remove('hidden'), 500);
 }
@@ -187,7 +213,7 @@ function resetBoothState() {
     currentStep = 0;
     isBusy = false;
     const btn = document.getElementById('snap-btn');
-    btn.classList.remove('busy', 'done'); // DO NOT use innerText here
+    btn.classList.remove('busy', 'done'); 
     document.getElementById('blueprint').innerHTML = '';
     updateBlueprint();
 }
@@ -213,13 +239,13 @@ function updateMiniPreview(row, x, y, size) {
         return temp.toDataURL();
     };
     if(l) l.innerHTML = `<img src="${extract(x)}">`;
-    if(r) r.innerHTML = `<img src="${extract(x + size + 15)}">`;
+    if(r) r.innerHTML = `<img src="${extract(x + size + 20)}">`;
 }
 
 document.getElementById('download-btn').onclick = () => {
     const link = document.createElement('a');
     link.href = document.getElementById('final-img').src;
-    link.download = `Yanahgi-${Date.now()}.png`;
+    link.download = `Yanahgi-Valentine-${Date.now()}.png`;
     link.click();
 };
 
