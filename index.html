@@ -2,10 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#800000"> 
     <title>Yanahgi PhotoBooth</title>
     <link rel="stylesheet" href="style.css" />
@@ -13,6 +10,15 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
   </head>
   <body>
+    <audio id="snd-tick" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
+
+    <div id="toast-container" class="hidden">
+      <div class="toast">
+        <i class="ph-fill ph-wifi-slash"></i>
+        <span>Connection Lost. Reconnecting...</span>
+      </div>
+    </div>
+
     <div id="screen-overlay" class="hidden">
       <div id="timer-container">
         <span id="countdown-text"></span>
@@ -35,11 +41,7 @@
 
           <div class="setup-actions">
             <button id="create-btn" class="primary-btn">Create Room</button>
-
-            <div class="divider">
-              <span>OR</span>
-            </div>
-
+            <div class="divider"><span>OR</span></div>
             <div class="join-container">
               <input type="text" id="join-id" placeholder="Partner's Code" />
               <button id="join-btn" class="primary-btn">Join</button>
@@ -65,6 +67,16 @@
                 <option value="polaroid">Double Square</option>
               </select>
             </div>
+
+            <div class="option">
+                <label>Filter</label>
+                <select id="filter-select">
+                  <option value="none">None</option>
+                  <option value="sepia(0.6) contrast(1.1) brightness(0.9)">Vintage Sepia</option>
+                  <option value="grayscale(1) contrast(1.2)">Noir B&W</option>
+                  <option value="saturate(1.5) contrast(1.1)">Vivid Film</option>
+                </select>
+            </div>
             
             <div class="option">
                 <label>Frame Color</label>
@@ -76,14 +88,6 @@
             </div>
 
             <div class="option">
-              <label>Filter</label>
-              <select id="filter-select">
-                <option value="none">Normal</option>
-                <option value="grayscale(100%)">B&W</option>
-                <option value="sepia(60%)">Retro</option>
-              </select>
-            </div>
-            <div class="option">
               <label>Paper</label>
               <select id="color-select">
                 <option value="#fffbf0">Vintage Cream</option>
@@ -92,16 +96,28 @@
                 <option value="#2d3436">Midnight</option>
               </select>
             </div>
+
+            <div class="option" style="flex-grow: 1;">
+                <label>Caption</label>
+                <input type="text" id="caption-input" placeholder="Yanahgi Caption" maxlength="25">
+            </div>
           </div>
 
           <div class="dual-camera-view">
             <div class="cam-box">
               <video id="local-video" autoplay muted playsinline></video>
-              <span class="cam-tag">YOU</span>
+              <div class="grain-overlay"></div> <span class="cam-tag">YOU</span>
+              <button id="mirror-toggle" class="icon-btn" title="Flip Camera">
+                <i class="ph-fill ph-arrows-left-right"></i>
+              </button>
             </div>
+
             <div class="cam-box">
               <video id="remote-video" autoplay playsinline></video>
-              <span class="cam-tag">PARTNER</span>
+              <div class="grain-overlay"></div> <span class="cam-tag">
+                PARTNER 
+                <span id="status-dot" class="status-dot dead"></span>
+              </span>
             </div>
           </div>
 
