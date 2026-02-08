@@ -41,18 +41,30 @@ document.getElementById('join-btn').onclick = async () => {
     const code = document.getElementById('join-id').value.toUpperCase();
     if(!code) return alert("Enter a code first!");
     
-    const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
-    setupLocalStream(stream);
-    
-    conn = peer.connect(code);
-    setupDataListeners();
-    
-    const call = peer.call(code, stream);
-    call.on('stream', s => { 
-        remoteStream = s; 
-        document.getElementById('remote-video').srcObject = s; 
-        startBooth(); 
-    });
+    try {
+        // Request camera
+        const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+        setupLocalStream(stream);
+        
+        // If camera is successful, proceed to connect
+        conn = peer.connect(code);
+        setupDataListeners();
+        
+        const call = peer.call(code, stream);
+        call.on('stream', s => { 
+            remoteStream = s; 
+            document.getElementById('remote-video').srcObject = s; 
+            startBooth(); 
+        });
+
+    } catch (err) {
+        console.error(err);
+        if (err.name === 'NotAllowedError') {
+            alert("CAMERA BLOCKED: Please click the lock icon in your browser address bar and change 'Camera' to 'Allow', then refresh!");
+        } else {
+            alert("Camera Error: " + err.message);
+        }
+    }
 };
 
 function setupDataListeners() {
@@ -264,3 +276,4 @@ document.getElementById('close-btn').onclick = () => {
     resetBoothState(); 
 
 };
+
