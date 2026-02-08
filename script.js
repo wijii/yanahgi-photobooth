@@ -71,6 +71,10 @@ document.getElementById('layout-select').onchange = resetBoothState;
 document.getElementById('color-select').onchange = (e) => {
     document.getElementById('blueprint').style.background = e.target.value;
 };
+document.getElementById('border-select').onchange = (e) => {
+    // Refresh blueprint styling to show new border color
+    updateBlueprint(); 
+};
 
 // --- CORE LOGIC ---
 document.getElementById('snap-btn').onclick = () => {
@@ -89,19 +93,20 @@ async function takeNextPhoto() {
     btn.classList.add('busy');
 
     let yPos = 0, xPos = 50, size = 292;
+    // Slight adjustments to fit borders nicely
     if (layout === 'strip') {
-        size = 285; xPos = 55; // Adjusted for frame room
+        size = 280; xPos = 60; 
         if(currentStep === 0) yPos = 50;
         if(currentStep === 1) yPos = 365;
         if(currentStep === 2) yPos = 680;
         totalSteps = 3;
     } else if (layout === 'grid') {
-        size = 285; xPos = 55;
+        size = 280; xPos = 60;
         if(currentStep === 0) yPos = 50;
         if(currentStep === 1) yPos = 365;
         totalSteps = 2;
     } else {
-        size = 320; xPos = 70; yPos = 70;
+        size = 310; xPos = 75; yPos = 75;
         totalSteps = 1;
     }
 
@@ -145,17 +150,18 @@ async function captureRow(rowIdx, x, y, size) {
     flash.classList.add('flash-trigger');
     ctx.filter = document.getElementById('filter-select').value;
     
-    // --- DRAW WITH WHITE FRAMES ---
-    drawSquareCrop(document.getElementById('local-video'), x, y, size, true);
-    drawSquareCrop(document.getElementById('remote-video'), x + size + 20, y, size, false);
+    // --- DRAW WITH COLORED BORDERS ---
+    const borderColor = document.getElementById('border-select').value;
+    drawSquareCrop(document.getElementById('local-video'), x, y, size, true, borderColor);
+    drawSquareCrop(document.getElementById('remote-video'), x + size + 20, y, size, false, borderColor);
 
-    updateMiniPreview(rowIdx, x, y, size);
+    updateMiniPreview(rowIdx, x, y, size, borderColor);
     await new Promise(r => setTimeout(r, 400));
     flash.classList.remove('flash-trigger');
     overlay.classList.add('hidden');
 }
 
-function drawSquareCrop(video, x, y, size, mirror) {
+function drawSquareCrop(video, x, y, size, mirror, borderColor) {
     const vW = video.videoWidth;
     const vH = video.videoHeight;
     const m = Math.min(vW, vH);
@@ -164,11 +170,11 @@ function drawSquareCrop(video, x, y, size, mirror) {
 
     ctx.save();
     
-    // 1. THE LINE/FRAME: Draw white rectangle behind the photo
+    // 1. BACKGROUND (in case of transparency issues)
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(x - 6, y - 6, size + 12, size + 12);
+    ctx.fillRect(x, y, size, size);
 
-    // 2. CLIP & DRAW
+    // 2. CLIP & DRAW PHOTO
     ctx.beginPath();
     ctx.rect(x, y, size, size);
     ctx.clip();
@@ -181,29 +187,30 @@ function drawSquareCrop(video, x, y, size, mirror) {
         ctx.drawImage(video, sx, sy, m, m, x, y, size, size);
     }
     
-    // 3. INNER BORDER (Makes it look like high-quality print)
-    ctx.filter = 'none';
-    ctx.strokeStyle = "rgba(0,0,0,0.1)";
-    ctx.lineWidth = 1;
+    ctx.restore(); // Restore clip to draw border on top
+
+    // 3. DRAW THE COLORED BORDER
+    ctx.filter = 'none'; // Ensure border isn't filtered
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 15; // Thick visible frame
     ctx.strokeRect(x, y, size, size);
-    
-    ctx.restore();
 }
 
 function finishSession() {
     const paper = document.getElementById('color-select').value;
     ctx.filter = 'none';
     
-    // VALENTINE BRANDING
-    // Use Maroon if the paper is light, Cream if the paper is dark
-    ctx.fillStyle = (paper === "#2d3436" || paper === "#3e2723") ? "#fffbf0" : "#800000";
+    // BRANDING TEXT COLOR
+    // If paper is dark, use cream text. If light, use maroon.
+    const isDark = (paper === "#2d3436" || paper === "#3e2723");
+    ctx.fillStyle = isDark ? "#fffbf0" : "#800000";
     
-    ctx.font = "italic 700 22px Georgia"; 
+    ctx.font = "italic 700 24px Georgia"; 
     ctx.textAlign = "center";
-    ctx.fillText("With Love ❤️", canvas.width / 2, canvas.height - 50);
+    ctx.fillText("Memories naten", canvas.width / 2, canvas.height - 60);
     
-    ctx.font = "300 12px Inter";
-    ctx.fillText("YANAHGI ARCHIVE // " + new Date().toLocaleDateString(), canvas.width / 2, canvas.height - 30);
+    ctx.font = "300 14px Inter";
+    ctx.fillText("Yanahgi" + new Date().toLocaleDateString(), canvas.width / 2, canvas.height - 35);
 
     document.getElementById('final-img').src = canvas.toDataURL('image/png');
     setTimeout(() => document.getElementById('result-modal').classList.remove('hidden'), 500);
@@ -221,23 +228,53 @@ function resetBoothState() {
 function updateBlueprint() {
     const layout = document.getElementById('layout-select').value;
     const container = document.getElementById('blueprint');
+    const borderColor = document.getElementById('border-select').value;
     const rows = layout === 'strip' ? 3 : (layout === 'grid' ? 2 : 1);
-    container.innerHTML = '';
-    for(let i=0; i<rows; i++) {
-        container.innerHTML += `<div class="slot-pair"><div class="mini-square" id="slot-${i}-L"></div><div class="mini-square" id="slot-${i}-R"></div></div>`;
+    
+    // If we are resetting, we clear it. If updating color, we keep content if possible, 
+    // but for simplicity, we usually rebuild.
+    // Here we just rebuild the slots.
+    if(container.children.length === 0 || currentStep === 0) {
+        container.innerHTML = '';
+        for(let i=0; i<rows; i++) {
+            container.innerHTML += `
+            <div class="slot-pair">
+                <div class="mini-square" id="slot-${i}-L" style="border: 3px solid ${borderColor}"></div>
+                <div class="mini-square" id="slot-${i}-R" style="border: 3px solid ${borderColor}"></div>
+            </div>`;
+        }
+    } else {
+        // Just update border colors of existing squares if we are mid-session
+        const squares = document.querySelectorAll('.mini-square');
+        squares.forEach(sq => sq.style.border = `3px solid ${borderColor}`);
     }
     container.style.background = document.getElementById('color-select').value;
 }
 
-function updateMiniPreview(row, x, y, size) {
+function updateMiniPreview(row, x, y, size, borderColor) {
     const l = document.getElementById(`slot-${row}-L`);
     const r = document.getElementById(`slot-${row}-R`);
+    
+    // Update border color dynamically in case it changed
+    if(l) l.style.border = `3px solid ${borderColor}`;
+    if(r) r.style.border = `3px solid ${borderColor}`;
+
     const extract = (offX) => {
         const temp = document.createElement('canvas');
         temp.width = size; temp.height = size;
-        temp.getContext('2d').drawImage(canvas, offX, y, size, size, 0, 0, size, size);
+        const tCtx = temp.getContext('2d');
+        
+        // Draw image
+        tCtx.drawImage(canvas, offX, y, size, size, 0, 0, size, size);
+        
+        // Draw border on mini preview too (optional, but looks better)
+        tCtx.lineWidth = 15; // Scale this down if needed, but 15 matches canvas
+        tCtx.strokeStyle = borderColor;
+        tCtx.strokeRect(0,0,size,size);
+
         return temp.toDataURL();
     };
+
     if(l) l.innerHTML = `<img src="${extract(x)}">`;
     if(r) r.innerHTML = `<img src="${extract(x + size + 20)}">`;
 }
@@ -245,7 +282,7 @@ function updateMiniPreview(row, x, y, size) {
 document.getElementById('download-btn').onclick = () => {
     const link = document.createElement('a');
     link.href = document.getElementById('final-img').src;
-    link.download = `Yanahgi-Valentine-${Date.now()}.png`;
+    link.download = `Yanahgi${Date.now()}.png`;
     link.click();
 };
 
