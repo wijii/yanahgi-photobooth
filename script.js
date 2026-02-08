@@ -61,7 +61,6 @@ document.getElementById('join-btn').onclick = async () => {
 
 function setupDataListeners() {
     conn.on('data', (data) => {
-        // Only take the photo if we aren't already in the middle of one
         if (data.type === 'SNAP_NEXT' && !isBusy) {
             takeNextPhoto();
         }
@@ -87,31 +86,22 @@ document.getElementById('color-select').onchange = (e) => {
     document.getElementById('blueprint').style.background = e.target.value;
 };
 
-// --- CORE LOGIC: ONE BY ONE ---
+// --- CORE LOGIC ---
 document.getElementById('snap-btn').onclick = () => {
-    // If the camera is busy, do absolutely nothing
     if (isBusy) return;
-
-    // Send signal to partner
     if (conn && conn.open) conn.send({ type: 'SNAP_NEXT' });
-    
     takeNextPhoto();
 };
 
 async function takeNextPhoto() {
-    // DOUBLE CHECK: Stop if busy or if we already finished
     if (isBusy || currentStep >= totalSteps) return;
 
-    // ACTIVATE LOCK
     isBusy = true;
-    
     const btn = document.getElementById('snap-btn');
     const layout = document.getElementById('layout-select').value;
     
-    // UI Feedback
-    btn.disabled = true;
-    btn.style.opacity = "0.4";
-    btn.innerText = "WAIT...";
+    // Add "Busy" class for animation
+    btn.classList.add('busy');
 
     let yPos = 0, xPos = 50, size = 292;
     
@@ -131,7 +121,6 @@ async function takeNextPhoto() {
         totalSteps = 1;
     }
 
-    // Initialize Canvas on first step
     if (currentStep === 0) {
         if(layout === 'strip') { canvas.width = 700; canvas.height = 1100; }
         else if(layout === 'grid') { canvas.width = 700; canvas.height = 800; }
@@ -142,22 +131,17 @@ async function takeNextPhoto() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // Capture the photo (Waits for countdown + flash)
     await captureRow(currentStep, xPos, yPos, size);
-    
     currentStep++;
 
-    // CHECK IF FINISHED
     if (currentStep >= totalSteps) {
         finishSession();
-        btn.innerText = "DONE";
-        // isBusy stays true to prevent further clicks
+        btn.classList.remove('busy');
+        btn.classList.add('done');
     } else {
-        // RELEASE LOCK for next photo
+        // Unlock for next pose
         isBusy = false;
-        btn.disabled = false;
-        btn.style.opacity = "1";
-        btn.innerText = "SNAP";
+        btn.classList.remove('busy');
     }
 }
 
@@ -170,7 +154,6 @@ async function captureRow(rowIdx, x, y, size) {
     overlay.classList.remove('hidden');
     timerBox.classList.remove('hidden');
 
-    // Countdown loop
     for (let i = 3; i > 0; i--) {
         countText.innerText = i;
         await new Promise(r => setTimeout(r, 1000));
@@ -212,7 +195,7 @@ function drawSquareCrop(video, x, y, size, mirror) {
 function finishSession() {
     const paper = document.getElementById('color-select').value;
     ctx.filter = 'none';
-    ctx.fillStyle = (paper === "#2d3436" || paper === "#1a1a1a") ? "white" : "#111";
+    ctx.fillStyle = (paper === "#2d3436") ? "white" : "#111";
     ctx.font = "300 16px Inter"; 
     ctx.textAlign = "center";
     ctx.fillText("YANAHGI // " + new Date().toLocaleDateString(), canvas.width/2, canvas.height - 40);
@@ -227,12 +210,9 @@ function finishSession() {
 
 function resetBoothState() {
     currentStep = 0;
-    isBusy = false; // RESET THE LOCK
+    isBusy = false;
     const btn = document.getElementById('snap-btn');
-    btn.disabled = false;
-    btn.style.opacity = "1";
-    btn.innerText = "SNAP";
-    
+    btn.classList.remove('busy', 'done');
     document.getElementById('blueprint').innerHTML = '';
     updateBlueprint();
 }
