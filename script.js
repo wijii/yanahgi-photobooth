@@ -4,9 +4,9 @@ const ctx = canvas.getContext('2d');
 
 // --- STATE MANAGEMENT ---
 let currentStep = 0;
-let totalSteps = 3; // Default for strip
+let totalSteps = 3; 
 
-// --- PEER JS SETUP (Standard) ---
+// --- PEER JS SETUP ---
 const myId = Math.random().toString(36).substring(2, 8).toUpperCase();
 peer = new Peer(myId);
 
@@ -42,11 +42,8 @@ document.getElementById('join-btn').onclick = async () => {
     if(!code) return alert("Enter a code first!");
     
     try {
-        // Request camera
         const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
         setupLocalStream(stream);
-        
-        // If camera is successful, proceed to connect
         conn = peer.connect(code);
         setupDataListeners();
         
@@ -56,11 +53,9 @@ document.getElementById('join-btn').onclick = async () => {
             document.getElementById('remote-video').srcObject = s; 
             startBooth(); 
         });
-
     } catch (err) {
-        console.error(err);
         if (err.name === 'NotAllowedError') {
-            alert("CAMERA BLOCKED: Please click the lock icon in your browser address bar and change 'Camera' to 'Allow', then refresh!");
+            alert("CAMERA BLOCKED: Please allow camera access in your browser settings.");
         } else {
             alert("Camera Error: " + err.message);
         }
@@ -83,12 +78,9 @@ function setupLocalStream(stream) {
 function startBooth() {
     document.getElementById('setup-screen').classList.add('hidden');
     document.getElementById('booth-screen').classList.remove('hidden');
-    
-    // Show Sidebar
     const sb = document.querySelector('.sidebar');
     sb.style.display = 'flex';
     setTimeout(() => sb.classList.add('active'), 10);
-
     resetBoothState();
 }
 
@@ -97,16 +89,26 @@ document.getElementById('color-select').onchange = (e) => {
     document.getElementById('blueprint').style.background = e.target.value;
 };
 
-// --- CORE LOGIC: ONE BY ONE ---
+// --- CORE LOGIC: SECURE SHUTTER ---
 document.getElementById('snap-btn').onclick = () => {
+    const btn = document.getElementById('snap-btn');
+    
+    // 1. Prevent multiple clicks
+    if (btn.disabled) return;
+    
+    // 2. Lock UI
+    btn.disabled = true;
+    btn.style.opacity = "0.4";
+    btn.innerText = "WAIT";
+
     if (conn && conn.open) conn.send({ type: 'SNAP_NEXT' });
     takeNextPhoto();
 };
 
 async function takeNextPhoto() {
     const layout = document.getElementById('layout-select').value;
+    const btn = document.getElementById('snap-btn');
     
-    // 1. DETERMINE CONFIGURATION (Do not set canvas size yet)
     let yPos = 0, xPos = 50, size = 292;
     
     if (layout === 'strip') {
@@ -125,30 +127,31 @@ async function takeNextPhoto() {
         totalSteps = 1;
     }
 
-    // 2. STOP if we are done
     if (currentStep >= totalSteps) return;
 
-    // 3. INITIALIZE CANVAS (Only on the FIRST step)
-    // *** THIS WAS THE FIX ***
     if (currentStep === 0) {
         if(layout === 'strip') { canvas.width = 700; canvas.height = 1100; }
         else if(layout === 'grid') { canvas.width = 700; canvas.height = 800; }
         else { canvas.width = 800; canvas.height = 650; }
 
-        // Fill Background Color
         const paperColor = document.getElementById('color-select').value;
         ctx.fillStyle = paperColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // 4. CAPTURE
+    // Capture process
     await captureRow(currentStep, xPos, yPos, size);
     
     currentStep++;
 
-    // 5. CHECK IF FINISHED
     if (currentStep >= totalSteps) {
         finishSession();
+        btn.innerText = "DONE";
+    } else {
+        // Unlock button for next photo
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.innerText = "SNAP";
     }
 }
 
@@ -158,11 +161,9 @@ async function captureRow(rowIdx, x, y, size) {
     const countText = document.getElementById('countdown-text');
     const flash = document.getElementById('flash-layer');
 
-    // UI Feedback
     overlay.classList.remove('hidden');
     timerBox.classList.remove('hidden');
 
-    // Countdown
     for (let i = 3; i > 0; i--) {
         countText.innerText = i;
         await new Promise(r => setTimeout(r, 1000));
@@ -171,17 +172,14 @@ async function captureRow(rowIdx, x, y, size) {
     timerBox.classList.add('hidden');
     flash.classList.add('flash-trigger');
     
-    // Draw to Canvas
     const filter = document.getElementById('filter-select').value;
     ctx.filter = filter;
     
     drawSquareCrop(document.getElementById('local-video'), x, y, size, true);
     drawSquareCrop(document.getElementById('remote-video'), x + size + 15, y, size, false);
 
-    // Update Sidebar Preview
     updateMiniPreview(rowIdx, x, y, size);
 
-    // Flash End
     await new Promise(r => setTimeout(r, 400));
     flash.classList.remove('flash-trigger');
     overlay.classList.add('hidden');
@@ -207,13 +205,10 @@ function drawSquareCrop(video, x, y, size, mirror) {
 function finishSession() {
     const paper = document.getElementById('color-select').value;
     ctx.filter = 'none';
-    
-    // Use contrasting text color
     ctx.fillStyle = (paper === "#2d3436" || paper === "#1a1a1a") ? "white" : "#111";
-    
     ctx.font = "300 16px Inter"; 
     ctx.textAlign = "center";
-    ctx.fillText("YANAHGI " + new Date().toLocaleDateString(), canvas.width/2, canvas.height - 40);
+    ctx.fillText("YANAHGI // " + new Date().toLocaleDateString(), canvas.width/2, canvas.height - 40);
 
     const finalImg = document.getElementById('final-img');
     finalImg.src = canvas.toDataURL('image/png');
@@ -225,6 +220,11 @@ function finishSession() {
 
 function resetBoothState() {
     currentStep = 0;
+    const btn = document.getElementById('snap-btn');
+    btn.disabled = false;
+    btn.style.opacity = "1";
+    btn.innerText = "SNAP";
+    
     document.getElementById('blueprint').innerHTML = '';
     updateBlueprint();
 }
@@ -248,20 +248,16 @@ function updateBlueprint() {
 function updateMiniPreview(row, x, y, size) {
     const l = document.getElementById(`slot-${row}-L`);
     const r = document.getElementById(`slot-${row}-R`);
-    
-    // Helper to cut out just the latest photo from main canvas
     const extract = (offX) => {
         const temp = document.createElement('canvas');
         temp.width = size; temp.height = size;
         temp.getContext('2d').drawImage(canvas, offX, y, size, size, 0, 0, size, size);
         return temp.toDataURL();
     };
-
     if(l) l.innerHTML = `<img src="${extract(x)}">`;
     if(r) r.innerHTML = `<img src="${extract(x + size + 15)}">`;
 }
 
-// Download & Close
 document.getElementById('download-btn').onclick = () => {
     const link = document.createElement('a');
     link.href = document.getElementById('final-img').src;
@@ -274,6 +270,4 @@ document.getElementById('download-btn').onclick = () => {
 document.getElementById('close-btn').onclick = () => { 
     document.getElementById('result-modal').classList.add('hidden'); 
     resetBoothState(); 
-
 };
-
