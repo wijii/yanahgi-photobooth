@@ -10,7 +10,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
   </head>
   <body>
-    <audio id="snd-tick" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
+    <audio id="snd-tick" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
 
     <div id="toast-container" class="hidden">
       <div class="toast">
@@ -42,6 +42,7 @@
           <div class="setup-actions">
             <button id="create-btn" class="primary-btn">Create Room</button>
             <div class="divider"><span>OR</span></div>
+            
             <div class="join-container">
               <input type="text" id="join-id" placeholder="Partner's Code" />
               <button id="join-btn" class="primary-btn">Join</button>
